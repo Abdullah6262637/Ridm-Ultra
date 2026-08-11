@@ -71,23 +71,23 @@ graph TD
     classDef llm fill:#dfd,stroke:#333,stroke-width:2px;
     classDef serve fill:#fdd,stroke:#333,stroke-width:2px;
 
-    A[(Ham Veri: JSONL / TXT)]:::data --> B[Veri Hazırlama & Kalite]
-    B --> |SHA256 & SimHash| C{Yol Seçimi}
+    A[("Ham Veri: JSONL / TXT")]:::data --> B["Veri Hazırlama & Kalite"]
+    B --> |"SHA256 & SimHash"| C{"Yol Seçimi"}
 
     %% RIDM Core Path
-    C -->|Kapalı Form SVD| D[RIDM Random Indexing]:::ridm
-    D --> E[OpenMP / C++ Hızlandırıcı]:::ridm
-    E --> F[Truncated SVD]:::ridm
-    F --> G[HybridLM Ensemble <br> SDM, PKM, Reasoning]:::ridm
+    C -->|"Kapalı Form SVD"| D["RIDM Random Indexing"]:::ridm
+    D --> E["OpenMP / C++ Hızlandırıcı"]:::ridm
+    E --> F["Truncated SVD"]:::ridm
+    F --> G["HybridLM Ensemble <br> SDM, PKM, Reasoning"]:::ridm
 
     %% LLM PyTorch Path
-    C -->|Derin Öğrenme| H[BPE Tokenizer Eğitimi]:::llm
-    H --> I[Streaming Loader]:::llm
-    I --> J[PyTorch DDP Pre-training <br> FlashAttn, GQA, RoPE]:::llm
-    J --> K[SFT & DPO Hizalama]:::llm
+    C -->|"Derin Öğrenme"| H["BPE Tokenizer Eğitimi"]:::llm
+    H --> I["Streaming Loader"]:::llm
+    I --> J["PyTorch DDP Pre-training <br> FlashAttn, GQA, RoPE"]:::llm
+    J --> K["SFT & DPO Hizalama"]:::llm
 
     %% Serving Path
-    G --> L[FastAPI & RAG Servisi <br> Dynamic int8 Quantization]:::serve
+    G --> L["FastAPI & RAG Servisi <br> Dynamic int8 Quantization"]:::serve
     K --> L
 ```
 
@@ -454,7 +454,7 @@ RIDM Ultra, tamamen açık kaynaklıdır ve **MIT Lisansı** ile sunulmaktadır.
 <br>
 
 <div align="center">
-  <h3>❤️ Geliştiriciyi Destekleyin! ☕</h3>
+  <h3>❤️ Bizi Destekleyin! ☕</h3>
   <p>Bu projeyi araştırma amaçlı veya kişisel olarak faydalı bulduysanız sayfanın sağ üstünden bir ⭐️ bırakmayı unutmayın!</p>
   <br>
 
