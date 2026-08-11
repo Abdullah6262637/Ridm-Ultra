@@ -28,9 +28,9 @@ include = ["ridm_ultra*"]
 [tool.setuptools]
 py-modules = [
   "attention", "backend", "benchmark", "calibration", "cli", "constants", "core",
-  "corpus", "datasets", "graph_retrieval", "hierarchical", "hybrid", "memory", "moe",
-  "multisense", "ngram", "reasoning", "reservoir", "subword", "tokenizer", "training",
-  "utils", "vocab",
+  "corpus", "datasets", "deep_understanding", "graph_retrieval", "hierarchical",
+  "hybrid", "memory", "moe", "multisense", "ngram", "reasoning", "reservoir",
+  "subword", "tokenizer", "training", "utils", "vocab",
 ]
 
 [tool.ruff]

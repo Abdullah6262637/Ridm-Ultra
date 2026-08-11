@@ -21,6 +21,7 @@ from .constants import SENTENCE_BOUNDARY_TOKENS, UNK_TOKEN
 from .core import RIDM
 from .corpus import build_default_corpus
 from .datasets import DatasetSplit, TextDataset
+from .deep_understanding import DeepGenerator, WordTypeModel, CoherenceScorer, build_deep_understanding
 from .graph_retrieval import LSHIndex, SemanticGraph, SimpleRAG
 from .hierarchical import HierarchicalContextMemory, adaptive_context
 from .hybrid import HybridLM
@@ -44,4 +45,5 @@ __all__ = [
     "ReasoningChain", "ReasoningController", "AutoregressiveCalibrator", "NeuralReranker",
     "MixtureOfExperts", "HybridLM", "build_default_corpus", "BenchmarkRunner", "ComputeBackend",
     "BackendInfo", "TextDataset", "DatasetSplit", "Trainer", "TrainingConfig", "TrainingResult",
+    "DeepGenerator", "WordTypeModel", "CoherenceScorer", "build_deep_understanding",
 ]

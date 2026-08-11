@@ -117,6 +117,12 @@ def build_arg_parser():
     ap.add_argument("--lsh-tables", type=int, default=4)
     ap.add_argument("--lsh-bits", type=int, default=8)
     ap.add_argument("--generate", type=str, default=None)
+    ap.add_argument("--deep", action="store_true", default=True,
+                     help="Derin anlama motoru (beam search + gramer + tutarlilik).")
+    ap.add_argument("--no-deep", dest="deep", action="store_false",
+                     help="Derin anlama motorunu devre disi birakir.")
+    ap.add_argument("--beam-width", type=int, default=5,
+                     help="Beam search genisligi.")
     ap.add_argument("--gen-length", type=int, default=40,
                      help="Uretilecek en fazla token sayisi (guvenlik ust siniri).")
     ap.add_argument("--gen-temp", type=float, default=0.9)
@@ -396,13 +402,27 @@ def main():
     if args.generate:
         from .utils import detokenize
         seed_words = args.generate.split()
-        gen_words = hybrid.generate(
-            seed_words, length=args.gen_length, temperature=args.gen_temp,
-            top_k=args.gen_topk, top_p=args.gen_topp, seed=args.seed,
-            num_sentences=args.gen_sentences, repetition_penalty=args.gen_repetition_penalty,
-        )
-        print(f"\n[URETIM/ham token] '{args.generate}' -> {' '.join(gen_words)}")
-        print(f"[URETIM/cumle]     '{args.generate}' -> {detokenize(gen_words)}")
+
+        if args.deep:
+            from .deep_understanding import build_deep_understanding
+            deep_gen, _, _ = build_deep_understanding(hybrid, words)
+            gen_words = deep_gen.generate(
+                seed_words, length=args.gen_length, temperature=args.gen_temp,
+                beam_width=args.beam_width, top_k=args.gen_topk,
+                num_sentences=args.gen_sentences,
+                repetition_penalty=args.gen_repetition_penalty,
+            )
+        else:
+            gen_words = hybrid.generate(
+                seed_words, length=args.gen_length, temperature=args.gen_temp,
+                top_k=args.gen_topk, top_p=args.gen_topp, seed=args.seed,
+                num_sentences=args.gen_sentences,
+                repetition_penalty=args.gen_repetition_penalty,
+            )
+
+        full_output = seed_words + gen_words
+        print(f"\n[URETIM/ham token] '{args.generate}' -> {' '.join(full_output)}")
+        print(f"[URETIM/cumle]     '{args.generate}' -> {detokenize(full_output)}")
 
     if args.save_model:
         ridm.save(args.save_model)
