@@ -32,6 +32,20 @@ class SemanticGraph:
         if ridm.word_emb is None:
             raise RuntimeError("SemanticGraph icin once RIDM.finalize() cagrilmali.")
 
+    def spreading_activation(self, seed_ids, steps=2, decay=0.6):
+        activation = np.zeros(self.V, dtype=np.float64)
+        for sid in seed_ids:
+            if 0 <= sid < self.V:
+                activation[sid] = 1.0
+        for _ in range(steps):
+            new_act = np.zeros_like(activation)
+            active = np.where(activation > 1e-6)[0]
+            for node in active:
+                for nb, sim in zip(self.neighbors[node], self.neighbor_sims[node]):
+                    new_act[nb] += activation[node] * sim * decay
+            activation = np.maximum(activation, new_act)
+        return activation
+
 # ======================================================
 # 6) RAG-BENZERI GETIRIM KATMANI
 # ======================================================
