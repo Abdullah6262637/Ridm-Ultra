@@ -25,6 +25,7 @@ router = APIRouter()
 async def health_check(chat_engine: ChatEngine = Depends(get_chat_engine)):
     return {
         "status": "ok",
+        "version": "6.0.0",
         "is_loaded": chat_engine.rag_engine is not None,
         "backend_info": {
             "adapters": [a.model_name for a in chat_engine.factory.all_adapters().values()]
