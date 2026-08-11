@@ -1,0 +1,6 @@
+> [!NOTE]
+> **Geometric Query Expansion: 'Kara delik nedir' -> 'kara delik yerçekimi kütleçekimi zaman yavaşlaması uzay zaman görelilik olay ufku tekillik'**
+
+KARA DELİKLER VE ZAMAN YAVAŞLAMASI: Kara deliklerin devasa kütleçekimi, uzay-zaman biriminin bükerek zamana göreliliğine neden olur; bu nedenle olay ufku yakınında zaman aralığındaki bir yedeklemeye göre çok daha yavaş akar.
+
+⚡ [Source: 100% Native C++ SVD Core - Offline Mode (cosine=0.59)]

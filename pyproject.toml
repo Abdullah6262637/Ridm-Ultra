@@ -1,0 +1,71 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ridm-ultra"
+version = "6.0.0"
+description = "Hardware-aware closed-form language-model training ecosystem"
+requires-python = ">=3.10"
+dependencies = [
+    "deep-translator>=1.11.4",
+    "langdetect>=1.0.9",
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+gpu = ["torch>=2.2"]
+llm = ["torch>=2.2", "tokenizers>=0.19"]
+serving = ["fastapi>=0.110", "uvicorn[standard]>=0.29"]
+dev = ["ruff>=0.4.0", "black>=24.0"]
+
+[project.scripts]
+ridm-ultra = "ridm_ultra.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["ridm_ultra*"]
+
+[tool.setuptools]
+py-modules = [
+  "attention", "backend", "benchmark", "calibration", "cli", "constants", "core",
+  "corpus", "datasets", "graph_retrieval", "hierarchical", "hybrid", "memory", "moe",
+  "multisense", "ngram", "reasoning", "reservoir", "subword", "tokenizer", "training",
+  "utils", "vocab",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+exclude = ["build", "dist", "artifacts", "scratch", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+norecursedirs = [".git", ".venv", "build", "dist", "artifacts", "ridm_ultra"]
+pythonpath = ["."]
+asyncio_mode = "auto"
+addopts = "--ignore=__init__.py"
+
+
+[tool.black]
+line-length = 120
+target-version = ['py310']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | build
+  | dist
+  | artifacts
+)/
+'''
+
+
+

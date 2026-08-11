@@ -1,0 +1,12 @@
+# ESLint ignore rules for RIDM Ultra
+build/
+dist/
+artifacts/
+scratch/
+node_modules/
+*.dll
+*.exe
+*.so
+*.dylib
+*.npz
+*.sqlite

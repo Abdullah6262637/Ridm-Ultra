@@ -1,0 +1,17 @@
+# Prettier ignore rules for RIDM Ultra
+build/
+dist/
+*.exe
+*.dll
+*.so
+*.dylib
+*.npz
+*.sqlite
+*.manifest.json
+artifacts/
+scratch/
+.venv/
+__pycache__/
+*.egg-info/
+native/build/
+docs/*.manifest.json
