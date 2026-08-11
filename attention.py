@@ -166,8 +166,11 @@ class CooccurrenceRelationBasis:
                 U_k, S_k, Vt_k = U[:, :k], S[:k], Vt[:k, :]
         except ImportError:
             # scipy yoksa dense yola geri don (kucuk sozlukler icin guvenli)
-            Cd = np.zeros((V, V))
-            np.add.at(Cd, (rows, cols), data) if len(rows) else None
+            eff_V = min(V, dense_threshold)
+            Cd = np.zeros((eff_V, eff_V))
+            if len(rows):
+                valid = (rows < eff_V) & (cols < eff_V)
+                np.add.at(Cd, (rows[valid], cols[valid]), data[valid])
             total = Cd.sum() + 1e-8
             P_ij = Cd / total
             P_i = (Cd.sum(axis=1, keepdims=True) / total) + 1e-12
@@ -176,7 +179,13 @@ class CooccurrenceRelationBasis:
                 pmi = np.log((P_ij + 1e-12) / (P_i @ P_j))
             ppmi_d = np.clip(pmi, 0, None)
             U, S, Vt = np.linalg.svd(ppmi_d, full_matrices=False)
-            U_k, S_k, Vt_k = U[:, :k], S[:k], Vt[:k, :]
+            eff_k = min(k, eff_V)
+            U_k_small, S_k, Vt_k_small = U[:, :eff_k], S[:eff_k], Vt[:eff_k, :]
+            
+            U_k = np.zeros((V, eff_k))
+            Vt_k = np.zeros((eff_k, V))
+            U_k[:eff_V, :] = U_k_small
+            Vt_k[:, :eff_V] = Vt_k_small
 
         sqrt_s = np.sqrt(np.clip(S_k, 0, None))
         self.query_basis = U_k * sqrt_s        # (V,k) - 'hedef/sorgu' rolu vektorleri

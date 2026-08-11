@@ -1,3 +1,0 @@
-Soyutlayıcı özet oluşturulamıyor.
-
-⚡ [Source: 100% Native C++ SVD Core - Offline Mode]

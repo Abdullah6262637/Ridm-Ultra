@@ -12,20 +12,6 @@ from .types import ChatMessage, ChatResponseChunk, MessageRole, ModelTier, Token
 logger = logging.getLogger(__name__)
 
 
-class ConversationTracker:
-    def __init__(self, decay_rate=0.8):
-        self.decay_rate = decay_rate
-        self.global_state = None
-
-    def update(self, prompt_vec):
-        if self.global_state is None:
-            self.global_state = prompt_vec.copy()
-        else:
-            self.global_state = self.decay_rate * self.global_state + (1 - self.decay_rate) * prompt_vec
-
-    def get_state(self):
-        return self.global_state
-
 class LocalTransformerAdapter(BaseModelAdapter):
     """100% Native Zero-Backprop SVD Autoregressive Decoder Adapter."""
 
@@ -39,7 +25,6 @@ class LocalTransformerAdapter(BaseModelAdapter):
         self._model_name = model_name
         self._tier = tier
         self.decoder = NativeDecoder()
-        self._tracker = ConversationTracker()
 
     @property
     def model_name(self) -> str:
@@ -61,11 +46,6 @@ class LocalTransformerAdapter(BaseModelAdapter):
         # 0 & 1: Bypassed TurkishTypoCorrector and Math Evaluator for English Pivot
         user_prompt = raw_user_prompt
 
-        # 2. Stateful Conversation Update
-        prompt_vec_raw = self.decoder._get_context_vector(self.decoder._encode_prompt(user_prompt))
-        self._tracker.update(prompt_vec_raw)
-
-
         has_rag = "[Retrieved Context]:" in last_msg
 
         # 3. Formulate generation prompt and stream via Omni-RAG Synthesizer
@@ -80,7 +60,7 @@ class LocalTransformerAdapter(BaseModelAdapter):
         graph_synth = GraphDecoder(self.decoder)
 
         token_count = 0
-        prompt_tok_len = len(user_prompt.split())
+        prompt_tok_len = max(1, len(user_prompt) // 4)
 
         # Detect greetings/chitchat first, even if RAG context was spuriously retrieved
         greeting_response = self._handle_conversational(user_prompt)

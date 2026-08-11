@@ -66,6 +66,7 @@ class GroupedQueryAttention(nn.Module):
 
     def forward(self, x: torch.Tensor, positions: torch.Tensor,
                 past_key_value: tuple[torch.Tensor, torch.Tensor] | None = None,
+                attention_mask: torch.Tensor | None = None,
                 use_cache: bool = False):
         batch, length, _ = x.shape
         q = self.q_proj(x).view(batch, length, self.n_heads, self.head_dim).transpose(1, 2)
@@ -92,6 +93,16 @@ class GroupedQueryAttention(nn.Module):
             query_positions = torch.arange(length, device=x.device)[:, None] + past_length
             key_positions = torch.arange(k.shape[2], device=x.device)[None, :]
             mask, is_causal = key_positions <= query_positions, False
+            
+        if attention_mask is not None:
+            if mask is None and is_causal:
+                query_positions = torch.arange(length, device=x.device)[:, None]
+                key_positions = torch.arange(k.shape[2], device=x.device)[None, :]
+                mask = key_positions <= query_positions
+            
+            mask = mask & attention_mask[:, None, None, :] if mask is not None else attention_mask[:, None, None, :]
+            is_causal = False
+
         # PyTorch 2.x CUDA'da FlashAttention/memory-efficient kernel otomatik seçilir.
         attended = F.scaled_dot_product_attention(q, k, v, attn_mask=mask, dropout_p=self.dropout if self.training else 0.0,
                                                   is_causal=is_causal)
@@ -119,8 +130,10 @@ class TransformerBlock(nn.Module):
         self.ffn = SwiGLU(config)
 
     def forward(self, x: torch.Tensor, positions: torch.Tensor,
-                past_key_value: tuple[torch.Tensor, torch.Tensor] | None = None, use_cache: bool = False):
-        attended, cache = self.attention(self.attention_norm(x), positions, past_key_value, use_cache)
+                past_key_value: tuple[torch.Tensor, torch.Tensor] | None = None,
+                attention_mask: torch.Tensor | None = None,
+                use_cache: bool = False):
+        attended, cache = self.attention(self.attention_norm(x), positions, past_key_value, attention_mask, use_cache)
         x = x + attended
         return x + self.ffn(self.ffn_norm(x)), cache
 
@@ -147,6 +160,7 @@ class DecoderOnlyTransformer(nn.Module):
 
     def forward(self, input_ids: torch.Tensor, labels: torch.Tensor | None = None,
                 past_key_values: tuple[tuple[torch.Tensor, torch.Tensor], ...] | None = None,
+                attention_mask: torch.Tensor | None = None,
                 use_cache: bool = False) -> CausalLMOutput:
         if input_ids.ndim != 2 or input_ids.shape[1] > self.config.max_seq_len:
             raise ValueError("input_ids [batch, seq] olmalı ve max_seq_len'i aşmamalıdır.")
@@ -164,9 +178,9 @@ class DecoderOnlyTransformer(nn.Module):
             previous = past_key_values[index] if past_key_values else None
             if self.config.gradient_checkpointing and self.training and not use_cache:
                 from torch.utils.checkpoint import checkpoint
-                x = checkpoint(lambda state: block(state, positions, None, False)[0], x, use_reentrant=False)
+                x = checkpoint(lambda state: block(state, positions, None, attention_mask, False)[0], x, use_reentrant=False)
             else:
-                x, cached = block(x, positions, previous, use_cache)
+                x, cached = block(x, positions, previous, attention_mask, use_cache)
                 if use_cache:
                     next_cache.append(cached)
         logits = self.lm_head(self.norm(x))
@@ -176,7 +190,7 @@ class DecoderOnlyTransformer(nn.Module):
         return CausalLMOutput(logits=logits, loss=loss, past_key_values=tuple(next_cache) if next_cache is not None else None)
 
     @torch.inference_mode()
-    def generate(self, input_ids: torch.Tensor, *, max_new_tokens: int = 128, temperature: float = 0.8,
+    def generate(self, input_ids: torch.Tensor, attention_mask: torch.Tensor | None = None, *, max_new_tokens: int = 128, temperature: float = 0.8,
                  top_k: int | None = 50, top_p: float = 0.95, eos_id: int | None = None) -> torch.Tensor:
         """KV-cache kullanan batched nucleus/top-k örnekleme.
 
@@ -187,8 +201,10 @@ class DecoderOnlyTransformer(nn.Module):
             raise ValueError("generate için boş olmayan [batch, seq] input gerekir.")
         if not 0 < temperature:
             raise ValueError("temperature pozitif olmalıdır.")
+        if attention_mask is not None:
+            attention_mask = attention_mask.bool()
         generated, finished = input_ids, torch.zeros(input_ids.shape[0], dtype=torch.bool, device=input_ids.device)
-        output = self(input_ids, use_cache=True)
+        output = self(input_ids, attention_mask=attention_mask, use_cache=True)
         cache, logits = output.past_key_values, output.logits[:, -1]
         for _ in range(max_new_tokens):
             if generated.shape[1] >= self.config.max_seq_len:
@@ -208,8 +224,10 @@ class DecoderOnlyTransformer(nn.Module):
                 next_token = torch.where(finished[:, None], torch.full_like(next_token, eos_id), next_token)
                 finished |= next_token.squeeze(1).eq(eos_id)
             generated = torch.cat((generated, next_token), dim=1)
+            if attention_mask is not None:
+                attention_mask = torch.cat([attention_mask, torch.ones((attention_mask.shape[0], 1), dtype=torch.bool, device=attention_mask.device)], dim=1)
             if eos_id is not None and bool(finished.all()):
                 break
-            output = self(next_token, past_key_values=cache, use_cache=True)
+            output = self(next_token, past_key_values=cache, attention_mask=attention_mask, use_cache=True)
             cache, logits = output.past_key_values, output.logits[:, -1]
         return generated

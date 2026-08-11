@@ -57,6 +57,13 @@ class SparseDistributedMemory:
         self.content *= rate
         self.write_counts *= rate
 
+    def consolidate(self, min_count=0.5):
+        mask = self.write_counts < min_count
+        count = int(mask.sum())
+        self.content[mask] = 0.0
+        self.write_counts[mask] = 0.0
+        return count
+
 
 # ======================================================
 # RIDM cekirdegi (v2 + incremental SVD destegi)

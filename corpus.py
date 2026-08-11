@@ -53,8 +53,11 @@ def load_rag_documents(max_docs=5000):
     docs = []
 
     # English Pivot: Point directly to the 2 Billion token FineWeb parquet
-    parquet_path = Path("data/raw/train-00003-of-00014.parquet")
-    if parquet_path.exists():
+    data_dir = Path("data/raw")
+    parquet_files = list(data_dir.glob("*.parquet"))
+    
+    if parquet_files:
+        parquet_path = parquet_files[0]
         try:
             df = pd.read_parquet(parquet_path)
             for txt in df["text"].dropna():

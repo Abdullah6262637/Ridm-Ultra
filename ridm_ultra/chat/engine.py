@@ -155,7 +155,10 @@ class ChatEngine:
                 finish_chunk = chunk
 
             if user_lang == 'en':
-                yield chunk
+                if chunk.finish_reason:
+                    yield ChatResponseChunk(delta=chunk.delta, finish_reason=None, model_name=chunk.model_name)
+                else:
+                    yield chunk
 
         assistant_content_en = "".join(full_response_acc)
         if user_lang != 'en':
@@ -166,7 +169,7 @@ class ChatEngine:
                 logger.warning(f"Translation to {user_lang} failed, using English: {e}")
                 assistant_content_translated = assistant_content_en
 
-            yield ChatResponseChunk(delta=assistant_content_translated, finish_reason="stop", model_name=adapter.model_name)
+            yield ChatResponseChunk(delta=assistant_content_translated, finish_reason=None, model_name=adapter.model_name)
             assistant_content = assistant_content_translated
         else:
             assistant_content = assistant_content_en
@@ -176,12 +179,16 @@ class ChatEngine:
                 f"\n\n⚡ [Source: 100% Native C++ SVD Core - Offline Mode "
                 f"(cosine={max_cosine:.2f})]"
             )
-            yield ChatResponseChunk(delta=badge, finish_reason=None, model_name=adapter.model_name)
-            assistant_content += badge
         else:
             badge = "\n\n⚡ [Source: 100% Native C++ SVD Core - Offline Mode]"
-            yield ChatResponseChunk(delta=badge, finish_reason=None, model_name=adapter.model_name)
-            assistant_content += badge
+
+        yield ChatResponseChunk(
+            delta=badge, 
+            finish_reason="stop", 
+            usage=finish_chunk.usage if finish_chunk else None,
+            model_name=adapter.model_name
+        )
+        assistant_content += badge
 
         # 7. Post-generation state update & persistence
         assistant_msg = ChatMessage(

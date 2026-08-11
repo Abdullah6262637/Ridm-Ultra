@@ -276,6 +276,8 @@ class RIDM:
         self._Vt_k = Vt
         self.word_emb = U_k * S
         self.k = len(S)
+        safe_counts = np.maximum(self.target_counts, 1)[:, None]
+        self._M_norm_cache = self.M / safe_counts
 
     def drift_estimate(self, sample_token_ids, max_samples=200):
         self._check_ready()

@@ -32,22 +32,6 @@ class SemanticGraph:
         if ridm.word_emb is None:
             raise RuntimeError("SemanticGraph icin once RIDM.finalize() cagrilmali.")
 
-    def spreading_activation(self, seed_token_ids, steps=1, decay=0.5):
-        activation = np.zeros(self.V)
-        frontier = {int(t): 1.0 for t in seed_token_ids if 0 <= t < self.V}
-        for step in range(steps):
-            new_frontier = defaultdict(float)
-            for node, strength in frontier.items():
-                activation[node] += strength
-                for nb, sim in zip(self.neighbors[node], self.neighbor_sims[node]):
-                    if sim > 0:
-                        new_frontier[int(nb)] += strength * sim * decay
-            frontier = new_frontier
-            if not frontier:
-                break
-        return activation
-
-
 # ======================================================
 # 6) RAG-BENZERI GETIRIM KATMANI
 # ======================================================
@@ -176,11 +160,12 @@ class SimpleRAG:
 
         # Hybrid term overlap scoring for precise RAG attribution
         scores = np.copy(sims)
+        max_possible_matches = max(1, len(clean_q))
         for i, doc in enumerate(self.documents):
             d_lower = doc.lower()
             matches = sum(1 for w in clean_q if w in d_lower)
             if matches > 1:
-                scores[i] += matches * 2.0
+                scores[i] += matches / max_possible_matches
 
         order = np.argsort(scores)[::-1][:top_n]
         return [(self.documents[i], float(scores[i]), self.doc_tokens[i]) for i in order if scores[i] >= threshold]

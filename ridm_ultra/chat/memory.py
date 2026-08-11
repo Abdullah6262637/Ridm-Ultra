@@ -80,7 +80,20 @@ class HierarchicalMemoryManager(BaseMemoryManager):
         cutoff_index = len(session.messages) // 2
         older_messages = session.messages[:cutoff_index]
 
-        summary_topics = [m.content[:30] + "..." for m in older_messages if m.role == MessageRole.USER]
+        summary_token_budget = int(threshold * 0.2)
+        total_old_tokens = max(1, sum(self._message_tokens(m) for m in older_messages))
+        
+        summary_topics = []
+        for m in older_messages:
+            if m.role == MessageRole.USER:
+                msg_tokens = self._message_tokens(m)
+                msg_budget = int(summary_token_budget * (msg_tokens / total_old_tokens))
+                char_budget = max(10, msg_budget * int(CHARS_PER_TOKEN_ESTIMATE))
+                if len(m.content) > char_budget:
+                    summary_topics.append(m.content[:char_budget] + "...")
+                else:
+                    summary_topics.append(m.content)
+                    
         new_summary = f"User discussed: {'; '.join(summary_topics)}"
 
         existing_summary = session.metadata.get("summary", "")

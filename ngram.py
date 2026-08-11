@@ -14,21 +14,26 @@ class NgramBaseline:
 
     def fit(self, token_ids):
         ctx_len = self.n - 1
-        for i in range(ctx_len, len(token_ids)):
-            ctx = tuple(token_ids[i - ctx_len : i])
-            self.counts[ctx][token_ids[i]] += 1
+        for i in range(len(token_ids)):
+            target = token_ids[i]
+            for length in range(ctx_len + 1):
+                if i - length >= 0:
+                    ctx = tuple(token_ids[i - length : i])
+                    self.counts[ctx][target] += 1
 
     def probs(self, context_token_ids):
         ctx_len = self.n - 1
-        ctx = tuple(context_token_ids[-ctx_len:]) if ctx_len > 0 else ()
-        counter = self.counts.get(ctx, Counter())
-        total = sum(counter.values())
-        V = self.vocab_size
-        denom = total + self.add_k * V
-        probs = np.full(V, self.add_k / denom)
-        for tok, c in counter.items():
-            probs[tok] = (c + self.add_k) / denom
-        return probs
+        for length in range(min(len(context_token_ids), ctx_len), -1, -1):
+            ctx = tuple(context_token_ids[-length:]) if length > 0 else ()
+            if ctx in self.counts or length == 0:
+                counter = self.counts.get(ctx, Counter())
+                total = sum(counter.values())
+                V = self.vocab_size
+                denom = total + self.add_k * V
+                probs = np.full(V, self.add_k / denom)
+                for tok, c in counter.items():
+                    probs[tok] = (c + self.add_k) / denom
+                return probs
 
     def evaluate(self, token_ids, max_samples=1000):
         ctx_len = self.n - 1

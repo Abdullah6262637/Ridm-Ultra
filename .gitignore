@@ -35,3 +35,6 @@ ENV/
 *.dll
 *.exe
 native/build/
+*.npz
+scratch/
+mackenzie.txt

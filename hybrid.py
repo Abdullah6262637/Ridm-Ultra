@@ -208,8 +208,11 @@ class HybridLM:
                 probs_wo_unk = probs.copy()
                 probs_wo_unk[unk] = 0.0
                 tries = 0
-                while tries < max_unk_resample and probs_wo_unk.sum() > 1e-12:
-                    probs_wo_unk = probs_wo_unk / probs_wo_unk.sum()
+                while True:
+                    s = probs_wo_unk.sum()
+                    if s <= 1e-12 or tries >= max_unk_resample:
+                        break
+                    probs_wo_unk = probs_wo_unk / s
                     candidate = int(rng.choice(len(probs_wo_unk), p=probs_wo_unk))
                     if candidate != unk:
                         next_id = candidate

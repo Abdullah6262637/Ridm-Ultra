@@ -21,7 +21,7 @@ from .schemas import (
 router = APIRouter()
 
 
-@router.get("/health")
+@router.get("/health", response_model=HealthResponse)
 async def health_check(chat_engine: ChatEngine = Depends(get_chat_engine)):
     return {
         "status": "ok",

@@ -105,7 +105,12 @@ class SFTTrainer:
         torch = self.torch
         final = self.output_dir / f"sft-{tag}.pt"
         temporary = final.with_suffix(".tmp")
-        torch.save({"format_version": 1, "kind": "sft", "step": self.step, "model": self.model.state_dict(),
+        model_to_save = self.model
+        if hasattr(model_to_save, "module"):
+            model_to_save = model_to_save.module
+        elif hasattr(model_to_save, "_orig_mod"):
+            model_to_save = model_to_save._orig_mod
+        torch.save({"format_version": 1, "kind": "sft", "step": self.step, "model": model_to_save.state_dict(),
                     "model_config": asdict(self.model_config), "sft_config": asdict(self.config)}, temporary)
         os.replace(temporary, final)
         (self.output_dir / "latest.json").write_text(f'{{"checkpoint": "{final.name}", "step": {self.step}}}\n', encoding="utf-8")
